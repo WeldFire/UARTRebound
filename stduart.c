@@ -15,7 +15,7 @@ unsigned char _rxByte;
 
 //Callback handler for receive
 void (*uartRxPtr)(unsigned char c);
-char* uart_nts(long input, char* result);
+char* uart_nts(long input, char* result, int pad);
 
 void uart_init(void){
 	setUARTOnReceiveMethod(0L);				// Reset the pointer
@@ -23,8 +23,9 @@ void uart_init(void){
 	P1SEL  |= RXD + TXD;					// Setup the pins
   	P1SEL2 |= RXD + TXD;
 
-  	// 1,000,000Hz, 9600Baud, UCBRx=104, UCBRSx=1, UCBRFx=0
   	UCA0CTL1 |= UCSSEL_2;                   // SMCLK
+
+  	// 1,000,000Hz, 9600Baud, UCBRx=104, UCBRSx=1, UCBRFx=0
   	UCA0BR0 = 104;                          // 1MHz 9600
   	UCA0BR1 = 0;                            // 1MHz 9600
   	UCA0MCTL = UCBRS0;                      // Modulation UCBRSx = 1
@@ -69,7 +70,12 @@ void uart_puts(const char *str){
 
 void uart_putd(long number){
 	char resultNum[11];
-	uart_puts(uart_nts(number, resultNum));
+	uart_puts(uart_nts(number, resultNum,0));
+}
+
+void uart_putdPadded(long number, int pad){
+	char resultNum[16];
+	uart_puts(uart_nts(number, resultNum, pad));
 }
 
 #pragma vector=USCIAB0RX_VECTOR
@@ -84,9 +90,10 @@ __interrupt void UART_RecieveInterrupt(void){
 }
 
 //(whole)Number to string
-char* uart_nts(long input, char* result){
+char* uart_nts(long input, char* result, int pad){
 	const char *numString = "0123456789";
 	char* resultPtr = result;
+	int padIndex = 0;
 	long tmp_value;
 
 	//Create the string but reversed
@@ -94,6 +101,13 @@ char* uart_nts(long input, char* result){
 		tmp_value = input;
 		input /= 10;
 		*resultPtr++ = numString[(tmp_value - input * 10)];
+		padIndex++;
+	}
+
+	//Apply padding to the end of the string
+	while(padIndex < pad){
+		*resultPtr++ = numString[0];
+		padIndex++;
 	}
 
 	// Apply negative sign

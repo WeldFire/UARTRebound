@@ -19,6 +19,9 @@ void uart_putc(unsigned char c);
 //Write a string to the UART buffer.
 void uart_puts(const char *str);
 
-//Write a while number to the UART buffer.
+//Write a whole number to the UART buffer.
 void uart_putd(long number);
+
+//Write a whole number to the UART buffer padded with up to 5 zeros.
+void uart_putdPadded(long number, int pad);
 #endif
